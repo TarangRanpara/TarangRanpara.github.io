@@ -2,10 +2,35 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://tarangranpara.github.io/About/site/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://tarangranpara.github.io/tags/about_this_site/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
   </url><url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://tarangranpara.github.io/about/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/tags/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/tags/what_is_this/</loc>
+    <lastmod>2025-04-21T17:38:22+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/About/me/</loc>
+    <lastmod>2025-04-21T17:38:10+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/tags/about_me/</loc>
+    <lastmod>2025-04-21T17:38:10+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/tags/who_is_this_guy/</loc>
+    <lastmod>2025-04-21T17:38:10+05:30</lastmod>
+  </url><url>
+    <loc>https://tarangranpara.github.io/archives/</loc>
+  </url><url>
+    <loc>https://tarangranpara.github.io/categories/</loc>
   </url>
 </urlset>

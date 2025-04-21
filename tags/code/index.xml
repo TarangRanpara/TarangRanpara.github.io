@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Code on Bits and Pieces</title>
+    <link>http://localhost:1313/tags/code/</link>
+    <description>Recent content in Code on Bits and Pieces</description>
+    <generator>Hugo -- 0.125.7</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 21 Apr 2025 17:38:10 +0530</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/code/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>About Me</title>
+      <link>http://localhost:1313/About/me/</link>
+      <pubDate>Mon, 21 Apr 2025 17:38:10 +0530</pubDate>
+      <guid>http://localhost:1313/About/me/</guid>
+      <description>1. Intro In Albert Einstein&amp;rsquo;s words:
+The important thing is not to stop questioning. Curiosity has its own reason for existence.
+If there&amp;rsquo;s a thread running through my life, it&amp;rsquo;s curiosity — relentless, untamed, ever-burning. It all began with the big questions of physics: &amp;ldquo;How did it all come about?&amp;rdquo; &amp;ldquo;Why are things the way they are?&amp;rdquo; &amp;ldquo;Where are we headed?&amp;rdquo; But the deeper I looked, the wider my curiosity grew — pulling me into the mysteries of life, philosophy, and the human experience itself.</description>
+    </item>
+  </channel>
+</rss>

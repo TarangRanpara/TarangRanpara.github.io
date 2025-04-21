@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>About_this_site on Bits and Pieces</title>
+    <link>https://tarangranpara.github.io/tags/about_this_site/</link>
+    <description>Recent content in About_this_site on Bits and Pieces</description>
+    <generator>Hugo -- 0.125.7</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 21 Apr 2025 17:38:22 +0530</lastBuildDate>
+    <atom:link href="https://tarangranpara.github.io/tags/about_this_site/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>About this site</title>
+      <link>https://tarangranpara.github.io/About/site/</link>
+      <pubDate>Mon, 21 Apr 2025 17:38:22 +0530</pubDate>
+      <guid>https://tarangranpara.github.io/About/site/</guid>
+      <description>Hi 👋, Namaste 🙏, Hello World 🌎!!
+I&amp;rsquo;m Tarang, and I welcome you to my humble abode on the vast internet. Once upon a time, I thought I&amp;rsquo;d call this space &amp;ldquo;Engineer&amp;rsquo;s Guide to Life&amp;rdquo; - a bold attempt to present a manual of sorts, to connect the dots between code and existence. But then, a thought struck me: who am I kidding? Life, much like code, is messy, unpredictable, and constantly refactored.</description>
+    </item>
+  </channel>
+</rss>

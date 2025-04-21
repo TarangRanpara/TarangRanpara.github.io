@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Tags on Tarang&#39;s Notes</title>
-    <link>http://localhost:1313/tags/</link>
-    <description>Recent content in Tags on Tarang&#39;s Notes</description>
+    <title>Tags on Bits and Pieces</title>
+    <link>https://tarangranpara.github.io/tags/</link>
+    <description>Recent content in Tags on Bits and Pieces</description>
     <generator>Hugo -- 0.125.7</generator>
     <language>en-us</language>
-    <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 21 Apr 2025 17:38:22 +0530</lastBuildDate>
+    <atom:link href="https://tarangranpara.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>About_this_site</title>
+      <link>https://tarangranpara.github.io/tags/about_this_site/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://tarangranpara.github.io/tags/about_this_site/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>What_is_this</title>
+      <link>https://tarangranpara.github.io/tags/what_is_this/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://tarangranpara.github.io/tags/what_is_this/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>About_me</title>
+      <link>https://tarangranpara.github.io/tags/about_me/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://tarangranpara.github.io/tags/about_me/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Who_is_this_guy</title>
+      <link>https://tarangranpara.github.io/tags/who_is_this_guy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://tarangranpara.github.io/tags/who_is_this_guy/</guid>
+      <description></description>
+    </item>
   </channel>
 </rss>
