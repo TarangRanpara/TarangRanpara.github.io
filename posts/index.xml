@@ -1,18 +1,36 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Posts on Tarang&#39;s Notes</title>
-    <link>http://localhost:1313/posts/</link>
-    <description>Recent content in Posts on Tarang&#39;s Notes</description>
+    <title>Posts on Bits and Pieces</title>
+    <link>https://tarangranpara.github.io/posts/</link>
+    <description>Recent content in Posts on Bits and Pieces</description>
     <generator>Hugo -- 0.125.7</generator>
     <language>en-us</language>
-    <atom:link href="http://localhost:1313/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 13 Sep 2025 16:22:06 +0530</lastBuildDate>
+    <atom:link href="https://tarangranpara.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Work Profile</title>
-      <link>http://localhost:1313/profile/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/profile/</guid>
-      <description>About me</description>
+      <title>Reinventing malloc: The First-Principles Journey, Part I</title>
+      <link>https://tarangranpara.github.io/Posts/malloc_internals/</link>
+      <pubDate>Sat, 13 Sep 2025 16:22:06 +0530</pubDate>
+      <guid>https://tarangranpara.github.io/Posts/malloc_internals/</guid>
+      <description>Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.</description>
+    </item>
+    <item>
+      <title>About this site</title>
+      <link>https://tarangranpara.github.io/Posts/site/</link>
+      <pubDate>Mon, 21 Apr 2025 17:38:22 +0530</pubDate>
+      <guid>https://tarangranpara.github.io/Posts/site/</guid>
+      <description>Hi 👋, Namaste 🙏, Hello World 🌎!!
+I&amp;rsquo;m Tarang, and I welcome you to my humble abode on the vast internet. Once upon a time, I thought of calling this site “Engineer’s Guide to Life” - a manual of sorts, a tidy map to navigate the chaos of code and existence. But as it turns out, life, much like code, refuses to be neatly organized. Bugs show up where you least expect them, refactors happen overnight, and failures are the norm, not the exception.</description>
+    </item>
+    <item>
+      <title>About Me</title>
+      <link>https://tarangranpara.github.io/Posts/me/</link>
+      <pubDate>Mon, 21 Apr 2025 17:38:10 +0530</pubDate>
+      <guid>https://tarangranpara.github.io/Posts/me/</guid>
+      <description>1. Intro Namaste, Hello, Hola, I&amp;rsquo;m Tarang Ranpara! 👋
+Tarang was born in Rajkot and, against all odds, grew up. After his undergrad, he joined ISRO and worked with some of the brightest minds in India, where he learned that “rocket science” is exactly as hard as it sounds but far less dramatic without background music. Later, he pursued his Master’s at DA-IICT, majoring in Machine Learning while also mastering electives like late-night Maggi and debugging code that only breaks during demos.</description>
     </item>
   </channel>
 </rss>

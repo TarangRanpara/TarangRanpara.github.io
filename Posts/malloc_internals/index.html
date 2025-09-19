@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Reinventing malloc: The First-Principles Journey, Part I | Bits and Pieces</title>
+<meta name="keywords" content="cpp, mallloc, Memory Management, Operating systems">
+<meta name="description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
+<meta name="author" content="Tarang Ranpara">
+<link rel="canonical" href="https://tarangranpara.github.io/Posts/malloc_internals/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.f49d66caae9ea0fd43f21f29e71a8d3e284517ed770f2aa86fa012953ad3c9ef.css" integrity="sha256-9J1myq6eoP1D8h8p5xqNPihFF&#43;13Dyqob6ASlTrTye8=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://tarangranpara.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://tarangranpara.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://tarangranpara.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://tarangranpara.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://tarangranpara.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="https://tarangranpara.github.io/Posts/malloc_internals/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript>
+  
+
+<meta property="og:url" content="https://tarangranpara.github.io/Posts/malloc_internals/">
+  <meta property="og:site_name" content="Bits and Pieces">
+  <meta property="og:title" content="Reinventing malloc: The First-Principles Journey, Part I">
+  <meta property="og:description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-09-13T16:22:06+05:30">
+    <meta property="article:modified_time" content="2025-09-13T16:22:06+05:30">
+    <meta property="article:tag" content="Cpp">
+    <meta property="article:tag" content="Mallloc">
+    <meta property="article:tag" content="Memory Management">
+    <meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reinventing malloc: The First-Principles Journey, Part I">
+<meta name="twitter:description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://tarangranpara.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Reinventing malloc: The First-Principles Journey, Part I",
+      "item": "https://tarangranpara.github.io/Posts/malloc_internals/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Reinventing malloc: The First-Principles Journey, Part I",
+  "name": "Reinventing malloc: The First-Principles Journey, Part I",
+  "description": "Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?\nTo answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.",
+  "keywords": [
+    "cpp", "mallloc", "Memory Management", "Operating systems"
+  ],
+  "articleBody": "Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?\nTo answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice. Using sbrk, we’ll grab raw memory from the OS, design a simple allocator, run into its limitations, and then refine it step by step.\nFor me, the moment it all clicked was a genuine “aha!” moment. Suddenly the black box of dynamic memory was no longer mysterious. By the end of this journey, we won’t just understand how malloc, free really work, we’ll also see how to build our own versions.\nDynamic Memory Allocation Programs rarely know in advance how much memory they will need or for how long. Static memory and stack allocations are rigid because their sizes must be fixed at compile time or at the moment a function is called, and their lifetime is predetermined. Real-world scenarios like reading files of unknown size, handling unpredictable user input, processing large datasets, or building flexible structures such as linked lists and trees require memory that can be created and managed on the fly. Dynamic allocation provides this freedom by allowing programs to request exactly the amount of memory they need, keep it for as long as required, and release it once they are done.\nThat raises another question: where do static variables live, what about stack allocations, and what is special about dynamically allocated memory that makes it different? To answer this, we need to look at how a process’s memory is laid out.\nProcess Memory layout When a program runs, the operating system gives it a virtual address space, which is a logical map of memory regions, each reserved for a different purpose. A typical process memory layout on Linux (simplified) looks like this:\nDynamically allocated variables live in the heap, which grows upward as described earlier. The program break marks the current end of the heap segment (i.e. The place starting from where the allocations can take place). Moving the program break forward by some offset allocates that much memory, while moving it backward releases memory back to the system.\nOS Interfaces for Dynamic memory allocation The system call sbrk allows a process to allocate or release memory by moving the program break:\nsbrk(0) returns the current end of the heap.\nsbrk(x) moves the program break forward by x bytes, which allocates x bytes of memory, returns the previous program break (which is essentially the start of a new memory block). Returns -1 in case of failure.\nsbrk(-x) moves the program break backward by x bytes, which deallocates x bytes of memory, returns the previous program break. Returns -1 in case of failure.\nSimilarly, the system call mmap allows a process to map a region of memory directly into its address space, providing an alternative way to allocate or release memory without moving the program break. We will discuss mmap in more detail later.\nImplementing a minimal allocator If we want to implement a minimal malloc, we can do something like below:\n#include #include #include #include void *my_malloc(size_t size) { void *p = sbrk(0); /* Moves program break by size units and returns previous break OR Returns -1 in case of failure. */ void *request = sbrk(size); if (request == (void*) -1) { return NULL; } else { assert(p == request); return p; } } When a program requests memory via my_malloc, it asks sbrk to increase the heap size and returns a pointer to the start of the newly allocated region. This approach works in principle, but it has a few short-comings:\nThe free function has no way to know the size of the memory block being released. The program break must always mark the end of the heap. This means we can only free the most recently allocated block; freeing any other block would violate this constraint. Refining the allocator To address these short-comings, we need a way to store the size of each allocated memory block and a mechanism to mark blocks as free without moving the program break, so that future my_malloc calls can reuse them. We can use singly linked list with metadata blocks defined like below:\nstruct block_meta { size_t size; // Represents the size of allocated memory block struct block_meta *next; int free; }; #define META_SIZE sizeof(struct block_meta) These metadata structures are stored at the start of each allocated memory block, followed by a data block where the actual data is stored. The resulting linked list then looks like this:\nWhen memory is requested, my_malloc first searches the list for a free block that can fit the requested size. If it finds one, that block is reused, saving space and avoiding extra system calls. If no suitable block exists, the program break is incremented, and a new block is allocated at the end of the list.\nFinding a free block The logic for finding a free block works as follows:\n// Function to find a free block of memory that fits the requested size struct block_meta *find_free_block(struct block_meta **last, size_t size) { struct block_meta *current = global_base; // Traverse the linked list of memory blocks while (current \u0026\u0026 !(current-\u003efree \u0026\u0026 current-\u003esize \u003e= size)) { *last = current; // Keep track of the last visited block current = current-\u003enext; // Move to the next block } // Return the first suitable free block, or NULL if none is found return current; } Allocating a new memory The logic for allocating a new block works as follows:\nstruct block_meta *request_space(struct block_meta* last, size_t size) { // Use sbrk to allocate memory from the system struct block_meta *block = sbrk(0); // Get the current program break void *request = sbrk(size + META_SIZE); // Move the program break to allocate memory // Check if the system call failed if (request == (void*)-1) { return NULL; // Return NULL if memory allocation fails } // Initialize the metadata for the new block block-\u003esize = size; // Set the size of the block block-\u003enext = NULL; // The new block does not point to any other block block-\u003efree = 0; // Mark the block as allocated // If there is a previous block, link it to the new block if (last) { last-\u003enext = block; } return block; // Return the pointer to the newly allocated block } New allocator (and deallocator) Our allocator my_malloc and deallocator my_free expose the same API as their real counterparts, malloc and free. The my_malloc takes the requested size as input and returns a pointer to a data block, either from an existing free block or from a newly allocated one. If no suitable block is available, it returns NULL. The my_free function takes a pointer to a data block as input and marks its metadata field free as 1. If an invalid address is passed to free, the behavior is undefined:\n// Function to allocate memory void *my_malloc(size_t size) { struct block_meta *block; // If this is the first allocation, initialize the global base if (!global_base) { block = request_space(NULL, size); // Request space from the system if (!block) return NULL; // Return NULL if allocation fails global_base = block; // Set the global base to the first block } else { struct block_meta *last = global_base; // Try to find a free block that fits the requested size block = find_free_block(\u0026last, size); if (!block) { // If no suitable free block is found, request more space from the system block = request_space(last, size); if (!block) return NULL; // Return NULL if allocation fails } else { // If a suitable free block is found, mark it as allocated block-\u003efree = 0; } } // Return a pointer to the data block return (block + 1); } // Function to free allocated memory void my_free(void* ptr) { if (!ptr) return; // If the pointer is NULL, do nothing // Retrieve the metadata block associated with the pointer struct block_meta* block_ptr = get_block_ptr(ptr); // Mark the block as free block_ptr-\u003efree = 1; } // Function to retrieve the data block associated with a given memory pointer. // This function calculates the address of the metadata block by subtracting the // size of the metadata structure from the given memory pointer. // // @param ptr A pointer to the memory region allocated by my_malloc. // @return A pointer to the data block associated with the given memory pointer. struct block_meta *get_block_ptr(void *ptr) { return (struct block_meta*)ptr - 1; } Testing new allocator and deallocator This test verifies the basic functionality of our custom allocator. It checks that my_malloc successfully returns non-NULL pointers, allows values to be written and read back, and provides distinct memory blocks for separate allocations. It then confirms that freeing a block (ptr_2 specifically) with my_free makes it available for reuse by ensuring a subsequent allocation returns the same address. Finally, it frees all allocated blocks to ensure the program exits cleanly without crashes. Check the test below:\n#include #include #include \"my_malloc.h\" void test_my_malloc_and_my_free() { // Test 1: Allocate memory and check if the pointer is not NULL int *ptr_1 = (int*) my_malloc(sizeof(int)); assert(ptr_1 != NULL); // Ensure memory allocation was successful *ptr_1 = 42; // Assign a value to the allocated memory assert(*ptr_1 == 42); // Verify the value // Test 2: Allocate another block and ensure it is distinct int *ptr_2 = (int*) my_malloc(sizeof(int)); assert(ptr_2 != NULL); *ptr_2 = 84; assert(*ptr_2 == 84); assert(ptr_1 != ptr_2); // Ensure the two pointers are distinct // Test 3: Free a block and reallocate to check reuse my_free(ptr_1); // Free the first block int *ptr_3 = (int*) my_malloc(sizeof(int)); assert(ptr_3 != NULL); *ptr_3 = 21; assert(*ptr_3 == 21); // Check if the freed block was reused assert(ptr_1 == ptr_3); // Test 4: Free all blocks and ensure no crashes my_free(ptr_2); my_free(ptr_3); printf(\"All tests passed!\\n\"); } int main() { test_my_malloc_and_my_free(); return 0; } Output:\ntarang@tarang-linux-box:~/Documents/work/malloc$ gcc my_malloc.c test_my_malloc.c -o malloc_test tarang@tarang-linux-box:~/Documents/work/malloc$ ./malloc_test All tests passed! Conclusion This simple allocator demonstrates the core ideas behind malloc and free: requesting memory from the operating system using sbrk, managing blocks with metadata, and reusing freed memory. While it is far from production-grade allocators like jemalloc or ptmalloc, it serves as a solid educational foundation for understanding how dynamic memory management works under the hood.\nLimitations of the current version:\nNot thread-safe: Partly because sbrk itself is not thread-safe, concurrent allocations can potentially cause race conditions. No block splitting: If a free block is larger than the requested size, the extra space is wasted instead of being split into smaller blocks. No block merging: Adjacent free blocks are not coalesced, which can lead to fragmentation over time. Future work Implement thread safety, possibly by using locks and/or building on top of the mmap system call. Add block splitting to better utilize oversized free blocks. Add block merging (coalescing) when adjacent blocks are freed, reducing fragmentation. Support realloc and calloc. Please find the source code on GitHub. Thanks for reading!\n",
+  "wordCount" : "1883",
+  "inLanguage": "en",
+  "datePublished": "2025-09-13T16:22:06+05:30",
+  "dateModified": "2025-09-13T16:22:06+05:30",
+  "author":{
+    "@type": "Person",
+    "name": "Tarang Ranpara"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://tarangranpara.github.io/Posts/malloc_internals/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bits and Pieces",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tarangranpara.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://tarangranpara.github.io/" accesskey="h" title="Bits and Pieces (Alt + H)">Bits and Pieces</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://tarangranpara.github.io/archives" title="Archives">
+                    <span>Archives</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://tarangranpara.github.io/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://tarangranpara.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://tarangranpara.github.io/posts/">Posts</a></div>
+    <h1 class="post-title entry-hint-parent">
+      Reinventing malloc: The First-Principles Journey, Part I
+    </h1>
+    <div class="post-meta"><span title='2025-09-13 16:22:06 +0530 IST'>September 13, 2025</span>&nbsp;·&nbsp;Tarang Ranpara
+
+</div>
+  </header> <div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul>
+                <li>
+                    <a href="#introduction" aria-label="Introduction">Introduction</a></li>
+                <li>
+                    <a href="#dynamic-memory-allocation" aria-label="Dynamic Memory Allocation">Dynamic Memory Allocation</a></li>
+                <li>
+                    <a href="#process-memory-layout" aria-label="Process Memory layout">Process Memory layout</a></li>
+                <li>
+                    <a href="#os-interfaces-for-dynamic-memory-allocation" aria-label="OS Interfaces for Dynamic memory allocation">OS Interfaces for Dynamic memory allocation</a></li>
+                <li>
+                    <a href="#implementing-a-minimal-allocator" aria-label="Implementing a minimal allocator">Implementing a minimal allocator</a></li>
+                <li>
+                    <a href="#refining-the-allocator" aria-label="Refining the allocator">Refining the allocator</a><ul>
+                        
+                <li>
+                    <a href="#finding-a-free-block" aria-label="Finding a free block">Finding a free block</a></li>
+                <li>
+                    <a href="#allocating-a-new-memory" aria-label="Allocating a new memory">Allocating a new memory</a></li>
+                <li>
+                    <a href="#new-allocator-and-deallocator" aria-label="New allocator (and deallocator)">New allocator (and deallocator)</a></li></ul>
+                </li>
+                <li>
+                    <a href="#testing-new-allocator-and-deallocator" aria-label="Testing new allocator and deallocator">Testing new allocator and deallocator</a></li>
+                <li>
+                    <a href="#conclusion" aria-label="Conclusion">Conclusion</a></li>
+                <li>
+                    <a href="#future-work" aria-label="Future work">Future work</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>When you call <code>malloc</code> in <code>C</code>, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like <code>malloc</code> in the first place?</p>
+<p>To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent <code>malloc</code>, and eventually settle on <code>sbrk</code> as our tool of choice. Using <code>sbrk</code>, we’ll grab raw memory from the OS, design a simple allocator, run into its limitations, and then refine it step by step.</p>
+<p>For me, the moment it all clicked was a genuine “aha!” moment. Suddenly the black box of dynamic memory was no longer mysterious. By the end of this journey, we won’t just understand how <code>malloc</code>, <code>free</code> really work, we’ll also see how to build our own versions.</p>
+<h2 id="dynamic-memory-allocation">Dynamic Memory Allocation<a hidden class="anchor" aria-hidden="true" href="#dynamic-memory-allocation">#</a></h2>
+<p>Programs rarely know in advance how much memory they will need or for how long. Static memory and stack allocations are rigid because their sizes must be fixed at compile time or at the moment a function is called, and their lifetime is predetermined. Real-world scenarios like reading files of unknown size, handling unpredictable user input, processing large datasets, or building flexible structures such as linked lists and trees require memory that can be created and managed on the fly. Dynamic allocation provides this freedom by allowing programs to request exactly the amount of memory they need, keep it for as long as required, and release it once they are done.</p>
+<p>That raises another question: where do static variables live, what about stack allocations, and what is special about dynamically allocated memory that makes it different? To answer this, we need to look at how a process’s memory is laid out.</p>
+<h2 id="process-memory-layout">Process Memory layout<a hidden class="anchor" aria-hidden="true" href="#process-memory-layout">#</a></h2>
+<p>When a program runs, the operating system gives it a virtual address space, which is a logical map of memory regions, each reserved for a different purpose. A typical process memory layout on Linux (simplified) looks like this:</p>
+<p><img alt="Process Memory layout" loading="lazy" src="/images/malloc_1/memory_layout.jpg"></p>
+<p>Dynamically allocated variables live in the heap, which grows upward as described earlier. The <code>program break</code> marks the current end of the heap segment (i.e. The place starting from where the allocations can take place). Moving the <code>program break</code> forward by some offset allocates that much memory, while moving it backward releases memory back to the system.</p>
+<h2 id="os-interfaces-for-dynamic-memory-allocation">OS Interfaces for Dynamic memory allocation<a hidden class="anchor" aria-hidden="true" href="#os-interfaces-for-dynamic-memory-allocation">#</a></h2>
+<p>The system call <a href="https://linux.die.net/man/2/sbrk">sbrk</a> allows a process to allocate or release memory by moving the <code>program break</code>:</p>
+<ol>
+<li>
+<p><code>sbrk(0)</code> returns the current end of the heap.</p>
+</li>
+<li>
+<p><code>sbrk(x)</code> moves the program break forward by <code>x</code> bytes, which allocates <code>x</code> bytes of memory, returns the previous program break (which is essentially the start of a new memory block). Returns <code>-1</code> in case of failure.</p>
+</li>
+<li>
+<p><code>sbrk(-x)</code> moves the program break backward by <code>x</code> bytes, which deallocates <code>x</code> bytes of memory, returns the previous program break. Returns <code>-1</code> in case of failure.</p>
+</li>
+</ol>
+<p>Similarly, the system call <a href="https://linux.die.net/man/2/mmap">mmap</a> allows a process to map a region of memory directly into its address space, providing an alternative way to allocate or release memory without moving the program break. We will discuss mmap in more detail later.</p>
+<h2 id="implementing-a-minimal-allocator">Implementing a minimal allocator<a hidden class="anchor" aria-hidden="true" href="#implementing-a-minimal-allocator">#</a></h2>
+<p>If we want to implement a minimal <code>malloc</code>, we can do something like below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;assert.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;string.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;sys/types.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;unistd.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">my_malloc</span>(<span style="color:#66d9ef">size_t</span> size) {
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>p <span style="color:#f92672">=</span> <span style="color:#a6e22e">sbrk</span>(<span style="color:#ae81ff">0</span>);
+</span></span><span style="display:flex;"><span>  <span style="color:#75715e">/*
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    Moves program break by size units and returns previous break OR
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    Returns -1 in case of failure.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">  */</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>request <span style="color:#f92672">=</span> <span style="color:#a6e22e">sbrk</span>(size); 
+</span></span><span style="display:flex;"><span>  <span style="color:#66d9ef">if</span> (request <span style="color:#f92672">==</span> (<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span>) <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> NULL;
+</span></span><span style="display:flex;"><span>  } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(p <span style="color:#f92672">==</span> request);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> p;
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>When a program requests memory via <code>my_malloc</code>, it asks <code>sbrk</code> to increase the heap size and returns a pointer to the start of the newly allocated region. This approach works in principle, but it has a few short-comings:</p>
+<ol>
+<li>The free function has no way to know the size of the memory block being released.</li>
+<li>The program break must always mark the end of the heap. This means we can only free the most recently allocated block; freeing any other block would violate this constraint.</li>
+</ol>
+<h2 id="refining-the-allocator">Refining the allocator<a hidden class="anchor" aria-hidden="true" href="#refining-the-allocator">#</a></h2>
+<p>To address these short-comings, we need a way to store the size of each allocated memory block and a mechanism to mark blocks as free without moving the program break, so that future <code>my_malloc</code> calls can reuse them. We can use singly linked list with metadata blocks defined like below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> block_meta {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">size_t</span> size;    <span style="color:#75715e">// Represents the size of allocated memory block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span>next;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">int</span> free;
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">#define META_SIZE sizeof(struct block_meta)
+</span></span></span></code></pre></div><p>These metadata structures are stored at the start of each allocated memory block, followed by a data block where the actual data is stored. The resulting linked list then looks like this:</p>
+<p><img alt="Process Memory layout" loading="lazy" src="/images/malloc_1/memory_singly_linkedlist.jpg"></p>
+<p>When memory is requested, <code>my_malloc</code> first searches the list for a free block that can fit the requested size. If it finds one, that block is reused, saving space and avoiding extra system calls. If no suitable block exists, the program break is incremented, and a new block is allocated at the end of the list.</p>
+<h3 id="finding-a-free-block">Finding a free block<a hidden class="anchor" aria-hidden="true" href="#finding-a-free-block">#</a></h3>
+<p>The logic for finding a free block works as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-C" data-lang="C"><span style="display:flex;"><span><span style="color:#75715e">// Function to find a free block of memory that fits the requested size
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span><span style="color:#a6e22e">find_free_block</span>(<span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">**</span>last, <span style="color:#66d9ef">size_t</span> size) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span>current <span style="color:#f92672">=</span> global_base;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Traverse the linked list of memory blocks
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">while</span> (current <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>(current<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">&amp;&amp;</span> current<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">&gt;=</span> size)) {
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">*</span>last <span style="color:#f92672">=</span> current;       <span style="color:#75715e">// Keep track of the last visited block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        current <span style="color:#f92672">=</span> current<span style="color:#f92672">-&gt;</span>next; <span style="color:#75715e">// Move to the next block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Return the first suitable free block, or NULL if none is found
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> current;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="allocating-a-new-memory">Allocating a new memory<a hidden class="anchor" aria-hidden="true" href="#allocating-a-new-memory">#</a></h3>
+<p>The logic for allocating a new block works as follows:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span><span style="color:#a6e22e">request_space</span>(<span style="color:#66d9ef">struct</span> block_meta<span style="color:#f92672">*</span> last, <span style="color:#66d9ef">size_t</span> size) {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Use sbrk to allocate memory from the system
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span>block <span style="color:#f92672">=</span> <span style="color:#a6e22e">sbrk</span>(<span style="color:#ae81ff">0</span>); <span style="color:#75715e">// Get the current program break
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>request <span style="color:#f92672">=</span> <span style="color:#a6e22e">sbrk</span>(size <span style="color:#f92672">+</span> META_SIZE); <span style="color:#75715e">// Move the program break to allocate memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the system call failed
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (request <span style="color:#f92672">==</span> (<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> NULL; <span style="color:#75715e">// Return NULL if memory allocation fails
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Initialize the metadata for the new block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    block<span style="color:#f92672">-&gt;</span>size <span style="color:#f92672">=</span> size;       <span style="color:#75715e">// Set the size of the block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    block<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> NULL;       <span style="color:#75715e">// The new block does not point to any other block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    block<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;          <span style="color:#75715e">// Mark the block as allocated
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If there is a previous block, link it to the new block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (last) {
+</span></span><span style="display:flex;"><span>        last<span style="color:#f92672">-&gt;</span>next <span style="color:#f92672">=</span> block;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> block; <span style="color:#75715e">// Return the pointer to the newly allocated block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><h3 id="new-allocator-and-deallocator">New allocator (and deallocator)<a hidden class="anchor" aria-hidden="true" href="#new-allocator-and-deallocator">#</a></h3>
+<p>Our allocator <code>my_malloc</code> and deallocator <code>my_free</code> expose the same API as their real counterparts, <code>malloc</code> and <code>free</code>. The <code>my_malloc</code> takes the requested size as input and returns a pointer to a data block, either from an existing free block or from a newly allocated one. If no suitable block is available, it returns <code>NULL</code>. The <code>my_free</code> function takes a pointer to a data block as input and marks its metadata field <code>free</code> as <code>1</code>. If an invalid address is passed to free, the behavior is undefined:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">// Function to allocate memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">my_malloc</span>(<span style="color:#66d9ef">size_t</span> size) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span>block;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// If this is the first allocation, initialize the global base
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>global_base) {
+</span></span><span style="display:flex;"><span>        block <span style="color:#f92672">=</span> <span style="color:#a6e22e">request_space</span>(NULL, size); <span style="color:#75715e">// Request space from the system
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>block) <span style="color:#66d9ef">return</span> NULL;          <span style="color:#75715e">// Return NULL if allocation fails
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        global_base <span style="color:#f92672">=</span> block;              <span style="color:#75715e">// Set the global base to the first block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span>last <span style="color:#f92672">=</span> global_base;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Try to find a free block that fits the requested size
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        block <span style="color:#f92672">=</span> <span style="color:#a6e22e">find_free_block</span>(<span style="color:#f92672">&amp;</span>last, size);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>block) {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// If no suitable free block is found, request more space from the system
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            block <span style="color:#f92672">=</span> <span style="color:#a6e22e">request_space</span>(last, size);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>block) <span style="color:#66d9ef">return</span> NULL; <span style="color:#75715e">// Return NULL if allocation fails
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// If a suitable free block is found, mark it as allocated
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            block<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Return a pointer to the data block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> (block <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Function to free allocated memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">my_free</span>(<span style="color:#66d9ef">void</span><span style="color:#f92672">*</span> ptr) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>ptr) <span style="color:#66d9ef">return</span>; <span style="color:#75715e">// If the pointer is NULL, do nothing
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retrieve the metadata block associated with the pointer
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">struct</span> block_meta<span style="color:#f92672">*</span> block_ptr <span style="color:#f92672">=</span> <span style="color:#a6e22e">get_block_ptr</span>(ptr);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Mark the block as free
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    block_ptr<span style="color:#f92672">-&gt;</span>free <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Function to retrieve the data block associated with a given memory pointer.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// This function calculates the address of the metadata block by subtracting the
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// size of the metadata structure from the given memory pointer.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// @param ptr A pointer to the memory region allocated by my_malloc.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// @return A pointer to the data block associated with the given memory pointer.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">struct</span> block_meta <span style="color:#f92672">*</span><span style="color:#a6e22e">get_block_ptr</span>(<span style="color:#66d9ef">void</span> <span style="color:#f92672">*</span>ptr) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> (<span style="color:#66d9ef">struct</span> block_meta<span style="color:#f92672">*</span>)ptr <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="testing-new-allocator-and-deallocator">Testing new allocator and deallocator<a hidden class="anchor" aria-hidden="true" href="#testing-new-allocator-and-deallocator">#</a></h2>
+<p>This test verifies the basic functionality of our custom allocator. It checks that <code>my_malloc</code> successfully returns non-NULL pointers, allows values to be written and read back, and provides distinct memory blocks for separate allocations. It then confirms that freeing a block (<code>ptr_2</code> specifically) with <code>my_free</code> makes it available for reuse by ensuring a subsequent allocation returns the same address. Finally, it frees all allocated blocks to ensure the program exits cleanly without crashes. Check the test below:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-c" data-lang="c"><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;assert.h&gt;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">#include</span> <span style="color:#75715e">&#34;my_malloc.h&#34;</span><span style="color:#75715e">
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">test_my_malloc_and_my_free</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test 1: Allocate memory and check if the pointer is not NULL
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>ptr_1 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int</span><span style="color:#f92672">*</span>) <span style="color:#a6e22e">my_malloc</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">int</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(ptr_1 <span style="color:#f92672">!=</span> NULL); <span style="color:#75715e">// Ensure memory allocation was successful
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#f92672">*</span>ptr_1 <span style="color:#f92672">=</span> <span style="color:#ae81ff">42</span>; <span style="color:#75715e">// Assign a value to the allocated memory
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">assert</span>(<span style="color:#f92672">*</span>ptr_1 <span style="color:#f92672">==</span> <span style="color:#ae81ff">42</span>); <span style="color:#75715e">// Verify the value
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test 2: Allocate another block and ensure it is distinct
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>ptr_2 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int</span><span style="color:#f92672">*</span>) <span style="color:#a6e22e">my_malloc</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">int</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(ptr_2 <span style="color:#f92672">!=</span> NULL);
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>ptr_2 <span style="color:#f92672">=</span> <span style="color:#ae81ff">84</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(<span style="color:#f92672">*</span>ptr_2 <span style="color:#f92672">==</span> <span style="color:#ae81ff">84</span>);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(ptr_1 <span style="color:#f92672">!=</span> ptr_2); <span style="color:#75715e">// Ensure the two pointers are distinct
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test 3: Free a block and reallocate to check reuse
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">my_free</span>(ptr_1); <span style="color:#75715e">// Free the first block
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">int</span> <span style="color:#f92672">*</span>ptr_3 <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int</span><span style="color:#f92672">*</span>) <span style="color:#a6e22e">my_malloc</span>(<span style="color:#66d9ef">sizeof</span>(<span style="color:#66d9ef">int</span>));
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(ptr_3 <span style="color:#f92672">!=</span> NULL);
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>ptr_3 <span style="color:#f92672">=</span> <span style="color:#ae81ff">21</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">assert</span>(<span style="color:#f92672">*</span>ptr_3 <span style="color:#f92672">==</span> <span style="color:#ae81ff">21</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if the freed block was reused
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">assert</span>(ptr_1 <span style="color:#f92672">==</span> ptr_3);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Test 4: Free all blocks and ensure no crashes
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">my_free</span>(ptr_2);
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">my_free</span>(ptr_3);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">printf</span>(<span style="color:#e6db74">&#34;All tests passed!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">test_my_malloc_and_my_free</span>();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Output:</p>
+<pre tabindex="0"><code>tarang@tarang-linux-box:~/Documents/work/malloc$ gcc my_malloc.c test_my_malloc.c -o malloc_test
+tarang@tarang-linux-box:~/Documents/work/malloc$ ./malloc_test 
+All tests passed!
+</code></pre><h2 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h2>
+<p>This simple allocator demonstrates the core ideas behind <code>malloc</code> and <code>free</code>: requesting memory from the operating system using <code>sbrk</code>, managing blocks with metadata, and reusing freed memory. While it is far from production-grade allocators like <code>jemalloc</code> or <code>ptmalloc</code>, it serves as a solid educational foundation for understanding how dynamic memory management works under the hood.</p>
+<p>Limitations of the current version:</p>
+<ol>
+<li><strong>Not thread-safe:</strong> Partly because <code>sbrk</code> itself is not thread-safe, concurrent allocations can potentially cause race conditions.</li>
+<li><strong>No block splitting:</strong> If a free block is larger than the requested size, the extra space is wasted instead of being split into smaller blocks.</li>
+<li><strong>No block merging:</strong> Adjacent free blocks are not coalesced, which can lead to fragmentation over time.</li>
+</ol>
+<h2 id="future-work">Future work<a hidden class="anchor" aria-hidden="true" href="#future-work">#</a></h2>
+<ol>
+<li>Implement thread safety, possibly by using locks and/or building on top of the <code>mmap</code> system call.</li>
+<li>Add block splitting to better utilize oversized free blocks.</li>
+<li>Add block merging (coalescing) when adjacent blocks are freed, reducing fragmentation.</li>
+<li>Support <code>realloc</code> and <code>calloc</code>.</li>
+</ol>
+<p>Please find the source code on <a href="https://github.com/TarangRanpara/my_malloc/tree/79e0ec5">GitHub</a>. Thanks for reading!</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://tarangranpara.github.io/tags/cpp/">Cpp</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/mallloc/">Mallloc</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/memory-management/">Memory Management</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/operating-systems/">Operating Systems</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>&copy; 2025 <a href="https://tarangranpara.github.io/">Bits and Pieces</a></span> · 
+
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

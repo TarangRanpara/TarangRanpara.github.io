@@ -10,9 +10,9 @@
     <atom:link href="https://tarangranpara.github.io/tags/about_this_site/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>About this site</title>
-      <link>https://tarangranpara.github.io/About/site/</link>
+      <link>https://tarangranpara.github.io/Posts/site/</link>
       <pubDate>Mon, 21 Apr 2025 17:38:22 +0530</pubDate>
-      <guid>https://tarangranpara.github.io/About/site/</guid>
+      <guid>https://tarangranpara.github.io/Posts/site/</guid>
       <description>Hi 👋, Namaste 🙏, Hello World 🌎!!
 I&amp;rsquo;m Tarang, and I welcome you to my humble abode on the vast internet. Once upon a time, I thought of calling this site “Engineer’s Guide to Life” - a manual of sorts, a tidy map to navigate the chaos of code and existence. But as it turns out, life, much like code, refuses to be neatly organized. Bugs show up where you least expect them, refactors happen overnight, and failures are the norm, not the exception.</description>
     </item>
