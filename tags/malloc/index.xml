@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Cpp on Bits and Pieces</title>
-    <link>http://localhost:1313/tags/cpp/</link>
-    <description>Recent content in Cpp on Bits and Pieces</description>
+    <title>Malloc on Bits and Pieces</title>
+    <link>http://localhost:1313/tags/malloc/</link>
+    <description>Recent content in Malloc on Bits and Pieces</description>
     <generator>Hugo -- 0.125.7</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 13 Sep 2025 16:22:06 +0530</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/cpp/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/malloc/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Reinventing malloc: The First-Principles Journey, Part I</title>
       <link>http://localhost:1313/Posts/malloc_internals/</link>
