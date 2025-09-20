@@ -1,25 +1,25 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Reinventing malloc: The First-Principles Journey, Part I | Bits and Pieces</title>
 <meta name="keywords" content="cpp, malloc, Memory Management, Operating systems">
 <meta name="description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
 To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
 <meta name="author" content="Tarang Ranpara">
-<link rel="canonical" href="http://localhost:1313/Posts/malloc_internals/">
+<link rel="canonical" href="https://tarangranpara.github.io/Posts/malloc_internals/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.f49d66caae9ea0fd43f21f29e71a8d3e284517ed770f2aa86fa012953ad3c9ef.css" integrity="sha256-9J1myq6eoP1D8h8p5xqNPihFF&#43;13Dyqob6ASlTrTye8=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://tarangranpara.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://tarangranpara.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://tarangranpara.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://tarangranpara.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://tarangranpara.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:1313/Posts/malloc_internals/">
+<link rel="alternate" hreflang="en" href="https://tarangranpara.github.io/Posts/malloc_internals/">
 <noscript>
     <style>
         #theme-toggle,
@@ -57,6 +57,81 @@ To answer that, let’s build our own allocator from scratch. We’ll start from
 
     </style>
 </noscript>
+  
+
+<meta property="og:url" content="https://tarangranpara.github.io/Posts/malloc_internals/">
+  <meta property="og:site_name" content="Bits and Pieces">
+  <meta property="og:title" content="Reinventing malloc: The First-Principles Journey, Part I">
+  <meta property="og:description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
+  <meta property="og:locale" content="en-us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-09-13T16:22:06+05:30">
+    <meta property="article:modified_time" content="2025-09-13T16:22:06+05:30">
+    <meta property="article:tag" content="Cpp">
+    <meta property="article:tag" content="Malloc">
+    <meta property="article:tag" content="Memory Management">
+    <meta property="article:tag" content="Operating Systems">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reinventing malloc: The First-Principles Journey, Part I">
+<meta name="twitter:description" content="Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?
+To answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://tarangranpara.github.io/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Reinventing malloc: The First-Principles Journey, Part I",
+      "item": "https://tarangranpara.github.io/Posts/malloc_internals/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Reinventing malloc: The First-Principles Journey, Part I",
+  "name": "Reinventing malloc: The First-Principles Journey, Part I",
+  "description": "Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?\nTo answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice.",
+  "keywords": [
+    "cpp", "malloc", "Memory Management", "Operating systems"
+  ],
+  "articleBody": "Introduction When you call malloc in C, it just… hands you memory. But how? Where does that memory actually come from? And why do we even need a function like malloc in the first place?\nTo answer that, let’s build our own allocator from scratch. We’ll start from first principles: understand what dynamic memory allocation is, examine the constructs the operating system provides for it, identify which ones can help us reinvent malloc, and eventually settle on sbrk as our tool of choice. Using sbrk, we’ll grab raw memory from the OS, design a simple allocator, run into its limitations, and then refine it step by step.\nFor me, the moment it all clicked was a genuine “aha!” moment. Suddenly the black box of dynamic memory was no longer mysterious. By the end of this journey, we won’t just understand how malloc, free really work, we’ll also see how to build our own versions.\nDynamic Memory Allocation Programs rarely know in advance how much memory they will need or for how long. Static memory and stack allocations are rigid because their sizes must be fixed at compile time or at the moment a function is called, and their lifetime is predetermined. Real-world scenarios like reading files of unknown size, handling unpredictable user input, processing large datasets, or building flexible structures such as linked lists and trees require memory that can be created and managed on the fly. Dynamic allocation provides this freedom by allowing programs to request exactly the amount of memory they need, keep it for as long as required, and release it once they are done.\nThat raises another question: where do static variables live, what about stack allocations, and what is special about dynamically allocated memory that makes it different? To answer this, we need to look at how a process’s memory is laid out.\nProcess Memory layout When a program runs, the operating system gives it a virtual address space, which is a logical map of memory regions, each reserved for a different purpose. A typical process memory layout on Linux (simplified) looks like this:\nDynamically allocated variables live in the heap, which grows upward as described earlier. The program break marks the current end of the heap segment (i.e. The place starting from where the allocations can take place). Moving the program break forward by some offset allocates that much memory, while moving it backward releases memory back to the system.\nOS Interfaces for Dynamic memory allocation The system call sbrk allows a process to allocate or release memory by moving the program break:\nsbrk(0) returns the current end of the heap.\nsbrk(x) moves the program break forward by x bytes, which allocates x bytes of memory, returns the previous program break (which is essentially the start of a new memory block). Returns -1 in case of failure.\nsbrk(-x) moves the program break backward by x bytes, which deallocates x bytes of memory, returns the previous program break. Returns -1 in case of failure.\nSimilarly, the system call mmap allows a process to map a region of memory directly into its address space, providing an alternative way to allocate or release memory without moving the program break. We will discuss mmap in more detail later.\nImplementing a minimal allocator If we want to implement a minimal malloc, we can do something like below:\n#include #include #include #include void *my_malloc(size_t size) { void *p = sbrk(0); /* Moves program break by size units and returns previous break OR Returns -1 in case of failure. */ void *request = sbrk(size); if (request == (void*) -1) { return NULL; } else { assert(p == request); return p; } } When a program requests memory via my_malloc, it asks sbrk to increase the heap size and returns a pointer to the start of the newly allocated region. This approach works in principle, but it has a few short-comings:\nThe free function has no way to know the size of the memory block being released. The program break must always mark the end of the heap. This means we can only free the most recently allocated block; freeing any other block would violate this constraint. Refining the allocator To address these short-comings, we need a way to store the size of each allocated memory block and a mechanism to mark blocks as free without moving the program break, so that future my_malloc calls can reuse them. We can use singly linked list with metadata blocks defined like below:\nstruct block_meta { size_t size; // Represents the size of allocated memory block struct block_meta *next; int free; }; #define META_SIZE sizeof(struct block_meta) These metadata structures are stored at the start of each allocated memory block, followed by a data block where the actual data is stored. The resulting linked list then looks like this:\nWhen memory is requested, my_malloc first searches the list for a free block that can fit the requested size. If it finds one, that block is reused, saving space and avoiding extra system calls. If no suitable block exists, the program break is incremented, and a new block is allocated at the end of the list.\nFinding a free block The logic for finding a free block works as follows:\n// Function to find a free block of memory that fits the requested size struct block_meta *find_free_block(struct block_meta **last, size_t size) { struct block_meta *current = global_base; // Traverse the linked list of memory blocks while (current \u0026\u0026 !(current-\u003efree \u0026\u0026 current-\u003esize \u003e= size)) { *last = current; // Keep track of the last visited block current = current-\u003enext; // Move to the next block } // Return the first suitable free block, or NULL if none is found return current; } Allocating a new memory The logic for allocating a new block works as follows:\nstruct block_meta *request_space(struct block_meta* last, size_t size) { // Use sbrk to allocate memory from the system struct block_meta *block = sbrk(0); // Get the current program break void *request = sbrk(size + META_SIZE); // Move the program break to allocate memory // Check if the system call failed if (request == (void*)-1) { return NULL; // Return NULL if memory allocation fails } // Initialize the metadata for the new block block-\u003esize = size; // Set the size of the block block-\u003enext = NULL; // The new block does not point to any other block block-\u003efree = 0; // Mark the block as allocated // If there is a previous block, link it to the new block if (last) { last-\u003enext = block; } return block; // Return the pointer to the newly allocated block } New allocator (and deallocator) Our allocator my_malloc and deallocator my_free expose the same API as their real counterparts, malloc and free. The my_malloc takes the requested size as input and returns a pointer to a data block, either from an existing free block or from a newly allocated one. If no suitable block is available, it returns NULL. The my_free function takes a pointer to a data block as input and marks its metadata field free as 1. If an invalid address is passed to free, the behavior is undefined:\n// Function to allocate memory void *my_malloc(size_t size) { struct block_meta *block; // If this is the first allocation, initialize the global base if (!global_base) { block = request_space(NULL, size); // Request space from the system if (!block) return NULL; // Return NULL if allocation fails global_base = block; // Set the global base to the first block } else { struct block_meta *last = global_base; // Try to find a free block that fits the requested size block = find_free_block(\u0026last, size); if (!block) { // If no suitable free block is found, request more space from the system block = request_space(last, size); if (!block) return NULL; // Return NULL if allocation fails } else { // If a suitable free block is found, mark it as allocated block-\u003efree = 0; } } // Return a pointer to the data block return (block + 1); } // Function to free allocated memory void my_free(void* ptr) { if (!ptr) return; // If the pointer is NULL, do nothing // Retrieve the metadata block associated with the pointer struct block_meta* block_ptr = get_block_ptr(ptr); // Mark the block as free block_ptr-\u003efree = 1; } // Function to retrieve the data block associated with a given memory pointer. // This function calculates the address of the metadata block by subtracting the // size of the metadata structure from the given memory pointer. // // @param ptr A pointer to the memory region allocated by my_malloc. // @return A pointer to the data block associated with the given memory pointer. struct block_meta *get_block_ptr(void *ptr) { return (struct block_meta*)ptr - 1; } Testing new allocator and deallocator This test verifies the basic functionality of our custom allocator. It checks that my_malloc successfully returns non-NULL pointers, allows values to be written and read back, and provides distinct memory blocks for separate allocations. It then confirms that freeing a block (ptr_2 specifically) with my_free makes it available for reuse by ensuring a subsequent allocation returns the same address. Finally, it frees all allocated blocks to ensure the program exits cleanly without crashes. Check the test below:\n#include #include #include \"my_malloc.h\" void test_my_malloc_and_my_free() { // Test 1: Allocate memory and check if the pointer is not NULL int *ptr_1 = (int*) my_malloc(sizeof(int)); assert(ptr_1 != NULL); // Ensure memory allocation was successful *ptr_1 = 42; // Assign a value to the allocated memory assert(*ptr_1 == 42); // Verify the value // Test 2: Allocate another block and ensure it is distinct int *ptr_2 = (int*) my_malloc(sizeof(int)); assert(ptr_2 != NULL); *ptr_2 = 84; assert(*ptr_2 == 84); assert(ptr_1 != ptr_2); // Ensure the two pointers are distinct // Test 3: Free a block and reallocate to check reuse my_free(ptr_1); // Free the first block int *ptr_3 = (int*) my_malloc(sizeof(int)); assert(ptr_3 != NULL); *ptr_3 = 21; assert(*ptr_3 == 21); // Check if the freed block was reused assert(ptr_1 == ptr_3); // Test 4: Free all blocks and ensure no crashes my_free(ptr_2); my_free(ptr_3); printf(\"All tests passed!\\n\"); } int main() { test_my_malloc_and_my_free(); return 0; } Output:\ntarang@tarang-linux-box:~/Documents/work/malloc$ gcc my_malloc.c test_my_malloc.c -o malloc_test tarang@tarang-linux-box:~/Documents/work/malloc$ ./malloc_test All tests passed! Conclusion This simple allocator demonstrates the core ideas behind malloc and free: requesting memory from the operating system using sbrk, managing blocks with metadata, and reusing freed memory. While it is far from production-grade allocators like jemalloc or ptmalloc, it serves as a solid educational foundation for understanding how dynamic memory management works under the hood.\nLimitations of the current version:\nNot thread-safe: This allocator is not thread safe because it relies on shared global state without any synchronization. Several different race conditions can occur when multiple threads call my_malloc or my_free at the same time.\nThe first issue arises with global_base. During initialization, if two threads see global_base as NULL, both may attempt to allocate the first block and set it. The last write will overwrite the other, leaving one block unreachable and the allocator in an inconsistent state.\nThe second issue appears while traversing the linked list of blocks:\nThread A enters find_free_block and starts walking the list.\nThread B finds no suitable free block and calls request_space, which allocates a new block.\nThread B writes last-\u003enext = block to link the new block into the list.\nMeanwhile, Thread A may still be holding the old last pointer and either misses the new node entirely or reads last-\u003enext while Thread B is updating it, resulting in an inconsistent or invalid pointer.\nThread safety is also a concern during deallocation. For example, suppose Thread A is freeing a block by setting block-\u003efree = 1 while Thread B is simultaneously searching the linked list in find_free_block to satisfy a new allocation. If Thread B reads the block’s free flag in the middle of Thread A’s update, it might see the block as available before it is fully initialized for reuse. This can result in two threads allocating the same block concurrently, corrupting its data and the allocator’s metadata. Such races make the allocator unsafe in multithreaded programs.\nNo block splitting: If a free block is larger than the requested size, the extra space is wasted instead of being split into smaller blocks. No block merging: Adjacent free blocks are not coalesced, which can lead to fragmentation over time. Reference: Dan Luu’s “Malloc Tutorial”\nFuture work Implement thread safety, possibly by using locks and/or building on top of the mmap system call. Add block splitting to better utilize oversized free blocks. Add block merging (coalescing) when adjacent blocks are freed, reducing fragmentation. Support realloc and calloc. Please find the source code on GitHub. Thanks for reading!\n",
+  "wordCount" : "2128",
+  "inLanguage": "en",
+  "datePublished": "2025-09-13T16:22:06+05:30",
+  "dateModified": "2025-09-13T16:22:06+05:30",
+  "author":{
+    "@type": "Person",
+    "name": "Tarang Ranpara"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://tarangranpara.github.io/Posts/malloc_internals/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Bits and Pieces",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tarangranpara.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
 <body class="" id="top">
@@ -74,7 +149,7 @@ To answer that, let’s build our own allocator from scratch. We’ll start from
 <header class="header">
     <nav class="nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="Bits and Pieces (Alt + H)">Bits and Pieces</a>
+            <a href="https://tarangranpara.github.io/" accesskey="h" title="Bits and Pieces (Alt + H)">Bits and Pieces</a>
             <div class="logo-switches">
                 <button id="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
@@ -100,12 +175,12 @@ To answer that, let’s build our own allocator from scratch. We’ll start from
         </div>
         <ul id="menu">
             <li>
-                <a href="http://localhost:1313/archives" title="Archives">
+                <a href="https://tarangranpara.github.io/archives" title="Archives">
                     <span>Archives</span>
                 </a>
             </li>
             <li>
-                <a href="http://localhost:1313/tags/" title="Tags">
+                <a href="https://tarangranpara.github.io/tags/" title="Tags">
                     <span>Tags</span>
                 </a>
             </li>
@@ -116,7 +191,7 @@ To answer that, let’s build our own allocator from scratch. We’ll start from
 
 <article class="post-single">
   <header class="post-header">
-    <div class="breadcrumbs"><a href="http://localhost:1313/">Home</a>&nbsp;»&nbsp;<a href="http://localhost:1313/posts/">Posts</a></div>
+    <div class="breadcrumbs"><a href="https://tarangranpara.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://tarangranpara.github.io/posts/">Posts</a></div>
     <h1 class="post-title entry-hint-parent">
       Reinventing malloc: The First-Principles Journey, Part I
     </h1>
@@ -402,17 +477,17 @@ All tests passed!
 
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="http://localhost:1313/tags/cpp/">Cpp</a></li>
-      <li><a href="http://localhost:1313/tags/malloc/">Malloc</a></li>
-      <li><a href="http://localhost:1313/tags/memory-management/">Memory Management</a></li>
-      <li><a href="http://localhost:1313/tags/operating-systems/">Operating Systems</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/cpp/">Cpp</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/malloc/">Malloc</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/memory-management/">Memory Management</a></li>
+      <li><a href="https://tarangranpara.github.io/tags/operating-systems/">Operating Systems</a></li>
     </ul>
   </footer>
 </article>
     </main>
     
 <footer class="footer">
-        <span>&copy; 2025 <a href="http://localhost:1313/">Bits and Pieces</a></span> · 
+        <span>&copy; 2025 <a href="https://tarangranpara.github.io/">Bits and Pieces</a></span> · 
 
     <span>
         Powered by

@@ -2,66 +2,66 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>Tags on Bits and Pieces</title>
-    <link>http://localhost:1313/tags/</link>
+    <link>https://tarangranpara.github.io/tags/</link>
     <description>Recent content in Tags on Bits and Pieces</description>
     <generator>Hugo -- 0.125.7</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 13 Sep 2025 16:22:06 +0530</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://tarangranpara.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Cpp</title>
-      <link>http://localhost:1313/tags/cpp/</link>
+      <link>https://tarangranpara.github.io/tags/cpp/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/cpp/</guid>
+      <guid>https://tarangranpara.github.io/tags/cpp/</guid>
       <description></description>
     </item>
     <item>
       <title>Malloc</title>
-      <link>http://localhost:1313/tags/malloc/</link>
+      <link>https://tarangranpara.github.io/tags/malloc/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/malloc/</guid>
+      <guid>https://tarangranpara.github.io/tags/malloc/</guid>
       <description></description>
     </item>
     <item>
       <title>Memory Management</title>
-      <link>http://localhost:1313/tags/memory-management/</link>
+      <link>https://tarangranpara.github.io/tags/memory-management/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/memory-management/</guid>
+      <guid>https://tarangranpara.github.io/tags/memory-management/</guid>
       <description></description>
     </item>
     <item>
       <title>Operating Systems</title>
-      <link>http://localhost:1313/tags/operating-systems/</link>
+      <link>https://tarangranpara.github.io/tags/operating-systems/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/operating-systems/</guid>
+      <guid>https://tarangranpara.github.io/tags/operating-systems/</guid>
       <description></description>
     </item>
     <item>
       <title>About_this_site</title>
-      <link>http://localhost:1313/tags/about_this_site/</link>
+      <link>https://tarangranpara.github.io/tags/about_this_site/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/about_this_site/</guid>
+      <guid>https://tarangranpara.github.io/tags/about_this_site/</guid>
       <description></description>
     </item>
     <item>
       <title>What_is_this</title>
-      <link>http://localhost:1313/tags/what_is_this/</link>
+      <link>https://tarangranpara.github.io/tags/what_is_this/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/what_is_this/</guid>
+      <guid>https://tarangranpara.github.io/tags/what_is_this/</guid>
       <description></description>
     </item>
     <item>
       <title>About_me</title>
-      <link>http://localhost:1313/tags/about_me/</link>
+      <link>https://tarangranpara.github.io/tags/about_me/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/about_me/</guid>
+      <guid>https://tarangranpara.github.io/tags/about_me/</guid>
       <description></description>
     </item>
     <item>
       <title>Who_is_this_guy</title>
-      <link>http://localhost:1313/tags/who_is_this_guy/</link>
+      <link>https://tarangranpara.github.io/tags/who_is_this_guy/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/tags/who_is_this_guy/</guid>
+      <guid>https://tarangranpara.github.io/tags/who_is_this_guy/</guid>
       <description></description>
     </item>
   </channel>

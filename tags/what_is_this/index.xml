@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>What_is_this on Bits and Pieces</title>
-    <link>http://localhost:1313/tags/what_is_this/</link>
+    <link>https://tarangranpara.github.io/tags/what_is_this/</link>
     <description>Recent content in What_is_this on Bits and Pieces</description>
     <generator>Hugo -- 0.125.7</generator>
     <language>en-us</language>
     <lastBuildDate>Mon, 21 Apr 2025 17:38:22 +0530</lastBuildDate>
-    <atom:link href="http://localhost:1313/tags/what_is_this/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://tarangranpara.github.io/tags/what_is_this/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>About this site</title>
-      <link>http://localhost:1313/Posts/site/</link>
+      <link>https://tarangranpara.github.io/Posts/site/</link>
       <pubDate>Mon, 21 Apr 2025 17:38:22 +0530</pubDate>
-      <guid>http://localhost:1313/Posts/site/</guid>
+      <guid>https://tarangranpara.github.io/Posts/site/</guid>
       <description>Hi 👋, Namaste 🙏, Hello World 🌎!!
 I&amp;rsquo;m Tarang, and I welcome you to my humble abode on the vast internet. Once upon a time, I thought of calling this site “Engineer’s Guide to Life” - a manual of sorts, a tidy map to navigate the chaos of code and existence. But as it turns out, life, much like code, refuses to be neatly organized. Bugs show up where you least expect them, refactors happen overnight, and failures are the norm, not the exception.</description>
     </item>
